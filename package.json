@@ -1,0 +1,56 @@
+{
+  "name": "hackathon-template",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n be,fe -c blue,green \"pnpm dev:be\" \"pnpm dev:fe\"",
+    "dev:be": "cd backend && uv run uvicorn app.main:app --reload --port 8000",
+    "dev:fe": "pnpm -C frontend dev",
+    "build": "pnpm -C frontend build",
+    "api": "openapi-codegen gen api && biome check --fix frontend/src/api",
+    "lint": "biome check .",
+    "lint:fix": "biome check --fix .",
+    "test": "cd backend && uv run pytest -v",
+    "seed": "cd backend && uv run python -m scripts.seed",
+    "db:reset": "rm -f backend/app.db && pnpm seed",
+    "dev:desktop": "concurrently -n be,fe,electron -c blue,green,yellow \"pnpm dev:be\" \"pnpm dev:fe\" \"pnpm electron:dev\"",
+    "electron:dev": "wait-on http://localhost:5173 && tsx electron/main.ts",
+    "electron:build": "pnpm build && electron-builder"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@openapi-codegen/cli": "^2.0.2",
+    "@openapi-codegen/typescript": "^8.0.2",
+    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "tsx": "^4.19.2",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.hackathon.app",
+    "productName": "HackathonApp",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "electron/**/*",
+      "frontend/dist/**/*",
+      "backend/**/*",
+      "!backend/__pycache__",
+      "!backend/.venv"
+    ],
+    "win": {
+      "target": "portable"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}
+

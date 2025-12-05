@@ -1,0 +1,8 @@
+packages:
+  - frontend
+
+onlyBuiltDependencies:
+  - '@biomejs/biome'
+  - '@swc/core'
+  - electron
+  - esbuild
