@@ -1,462 +1,291 @@
-# 🚀 Hackathon Template
+# 🔥 HyperStack Pro
 
-Fast, modern stack for rapid prototyping. Zero migrations, auto-generated types, works on all platforms.
+Next-generation fullstack framework with AI-powered code generation and real-time sync.
 
 ## Stack
 
-| Layer | Tech |
-|-------|------|
-| **Frontend** | React + Vite + TypeScript |
-| **Routing** | React Router v7 |
-| **UI** | Tailwind CSS + shadcn/ui |
-| **Data** | TanStack Query + react-hook-form + zod |
-| **Backend** | FastAPI + Python 3.12 |
-| **Database** | SQLite + SQLModel |
-| **Desktop** | Electron (optional) |
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | SolidJS 2.0 + Vite 6 + TypeScript 5.4 |
+| **State** | TanStack Store + Nano Stores |
+| **Backend** | Hono.js + Bun Runtime |
+| **Database** | TursoDB (libSQL) + Drizzle ORM |
+| **Auth** | Oslo + Arctic (OAuth 2.0) |
+| **Realtime** | PartyKit WebSockets |
+
+## Prerequisites
+
+- **Bun** 1.1.30+ (`curl -fsSL https://bun.sh/install | bash`)
+- **TursoDB CLI** (`brew install tursodb/tap/turso`)
+- **Node.js** 22+ (for Vite compatibility layer)
 
 ## Quick Start
 
-### Prerequisites
-
-- **Node.js** 20+ ([download](https://nodejs.org))
-- **Python** 3.12+ ([download](https://python.org))
-- **pnpm**: `npm install -g pnpm`
-- **uv**: `pip install uv` or `brew install uv`
-
-### Setup (2 minutes)
-
 ```bash
-# 1. Install all dependencies
-pnpm install                    # Frontend + root deps
-uv sync --project backend       # Backend deps
+# 1. Initialize TursoDB (required first!)
+turso db create hyperstack-dev --location waw
+turso db tokens create hyperstack-dev > .turso-token
 
-# 2. Run!
-pnpm dev
+# 2. Install dependencies
+bun install --frozen-lockfile
+cd services && bun install
+
+# 3. Generate Drizzle schemas
+bun run db:generate
+bun run db:push
+
+# 4. Start development
+bun run dev:all
 ```
 
-Open:
-- 🌐 **Frontend**: http://localhost:5173
-- 🔧 **Backend**: http://localhost:8000
-- 📚 **API Docs**: http://localhost:8000/docs
+**Important:** The dev server requires the TursoDB token to be set. Create `.env.local`:
+
+```env
+TURSO_DATABASE_URL=libsql://hyperstack-dev-<your-username>.turso.io
+TURSO_AUTH_TOKEN=<token from step 1>
+VITE_WS_ENDPOINT=ws://localhost:4567/party
+OSLO_SECRET=<generate with: openssl rand -hex 32>
+```
+
+## Development URLs
+
+| Service | URL | Port |
+|---------|-----|------|
+| Frontend | http://localhost:3333 | 3333 |
+| API Gateway | http://localhost:4000 | 4000 |
+| WebSocket Server | ws://localhost:4567 | 4567 |
+| Drizzle Studio | http://localhost:4983 | 4983 |
+
+## Project Structure
+
+```
+hyperstack/
+├── apps/
+│   ├── web/                 # SolidJS frontend
+│   │   ├── src/
+│   │   │   ├── routes/      # File-based routing
+│   │   │   ├── islands/     # Interactive components
+│   │   │   └── stores/      # Nano stores
+│   │   └── solid.config.ts
+│   └── api/                 # Hono.js backend
+│       ├── src/
+│       │   ├── routes/      # API routes
+│       │   ├── middleware/  # Auth, CORS, etc.
+│       │   └── db/          # Drizzle schemas
+│       └── drizzle.config.ts
+├── packages/
+│   ├── shared/              # Shared types & utils
+│   └── ui/                  # Component library
+├── services/
+│   └── realtime/            # PartyKit server
+└── turbo.json               # Turborepo config
+```
+
+## Authentication Setup
+
+This template uses Oslo for authentication with Arctic adapters.
+
+### 1. Configure OAuth Provider
+
+```typescript
+// apps/api/src/auth/providers.ts
+import { GitHub, Google } from "arctic";
+
+export const github = new GitHub(
+  process.env.GITHUB_CLIENT_ID!,
+  process.env.GITHUB_CLIENT_SECRET!
+);
+
+export const google = new Google(
+  process.env.GOOGLE_CLIENT_ID!,
+  process.env.GOOGLE_CLIENT_SECRET!,
+  "http://localhost:4000/auth/google/callback"
+);
+```
+
+### 2. Add environment variables
+
+```env
+GITHUB_CLIENT_ID=...
+GITHUB_CLIENT_SECRET=...
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+```
+
+### 3. Use auth in frontend
+
+```tsx
+import { createAuthClient } from "@hyperstack/auth-client";
+
+const auth = createAuthClient({
+  baseUrl: "http://localhost:4000",
+});
+
+// In component
+const user = auth.useSession();
+
+// Login
+auth.signIn("github");
+```
+
+## Database
+
+### Schema Definition
+
+```typescript
+// apps/api/src/db/schema.ts
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+
+export const users = sqliteTable("users", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  name: text("name"),
+  createdAt: integer("created_at", { mode: "timestamp" }).defaultNow(),
+});
+
+export const posts = sqliteTable("posts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  title: text("title").notNull(),
+  content: text("content"),
+  authorId: text("author_id").references(() => users.id),
+});
+```
+
+### Migrations
+
+```bash
+# Generate migration
+bun run db:generate
+
+# Apply to TursoDB
+bun run db:push
+
+# Open Drizzle Studio
+bun run db:studio
+```
+
+## Real-time (PartyKit)
+
+### Server Setup
+
+```typescript
+// services/realtime/src/server.ts
+import type { PartyKitServer } from "partykit/server";
+
+export default {
+  onConnect(connection, room) {
+    connection.send(JSON.stringify({ type: "connected", roomId: room.id }));
+  },
+
+  onMessage(message, connection, room) {
+    room.broadcast(message, [connection.id]);
+  },
+} satisfies PartyKitServer;
+```
+
+### Client Usage
+
+```tsx
+import { usePartySocket } from "partysocket/react";
+
+function Chat() {
+  const socket = usePartySocket({
+    host: "localhost:4567",
+    room: "main",
+  });
+
+  socket.send(JSON.stringify({ type: "message", text: "Hello!" }));
+}
+```
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `pnpm dev` | Start frontend + backend (web mode) |
-| `pnpm dev:desktop` | Start as desktop app (Electron) |
-| `pnpm test` | Run backend smoke tests |
-| `pnpm api` | Regenerate API types from backend |
-| `pnpm lint` | Check code with Biome |
-| `pnpm lint:fix` | Auto-fix lint issues |
-| `pnpm build` | Build frontend for production |
-| `pnpm electron:build` | Build desktop app (.exe/.dmg) |
-
-## Project Structure
-
-```
-hackathon/
-├── backend/
-│   ├── app/
-│   │   ├── main.py          # FastAPI entry point
-│   │   ├── config.py        # Settings + feature flags
-│   │   ├── db.py            # SQLite connection
-│   │   ├── models/          # SQLModel + Pydantic schemas
-│   │   ├── routes/          # API endpoints
-│   │   ├── features/        # 🔌 Optional modules (auth, uploads, websockets)
-│   │   └── utils/           # Helpers (pagination, etc.)
-│   └── pyproject.toml
-│
-├── frontend/
-│   ├── src/
-    │   │   ├── api/             # API hooks (auto-generate with `pnpm api`)
-    │   │   ├── components/      # React components
-    │   │   │   └── ui/          # shadcn/ui components
-    │   │   ├── features/        # 🔌 Optional modules (auth, uploads, websockets)
-    │   │   ├── pages/           # Page components (one per route)
-    │   │   ├── lib/             # Utilities
-    │   │   ├── App.tsx          # Layout + routing
-    │   │   └── main.tsx         # Entry point
-    │   └── package.json
-│
-├── electron/
-│   └── main.ts              # Electron entry (desktop mode)
-│
-├── package.json             # Root scripts
-└── biome.json               # Linting config
-```
-
-## 🔌 Optional Features
-
-Enable features by setting flags in `backend/app/config.py`:
-
-```python
-enable_auth: bool = True         # JWT authentication
-enable_file_upload: bool = True  # File upload/download
-enable_websockets: bool = True   # Real-time communication
-```
-
-### 🔐 Authentication (JWT)
-
-Full auth system with register, login, protected routes.
-
-**Backend:**
-```python
-from app.features.auth.deps import get_current_user, get_optional_user
-
-@router.get("/protected")
-def protected_route(user: AuthUser = Depends(get_current_user)):
-    return {"message": f"Hello {user.name}"}
-
-@router.get("/public")
-def public_route(user: AuthUser | None = Depends(get_optional_user)):
-    if user:
-        return {"message": f"Hello {user.name}"}
-    return {"message": "Hello guest"}
-```
-
-**Frontend:**
-```tsx
-import { AuthProvider, useAuth, ProtectedRoute, LoginForm } from "@/features/auth";
-
-// Wrap app with AuthProvider
-<AuthProvider>
-  <App />
-</AuthProvider>
-
-// Use auth in components
-const { user, login, logout, isAuthenticated } = useAuth();
-
-// Protect routes
-<ProtectedRoute>
-  <Dashboard />
-</ProtectedRoute>
-
-// Ready-made forms
-<LoginForm onSuccess={() => navigate('/dashboard')} />
-<RegisterForm onSuccess={() => navigate('/dashboard')} />
-```
-
-### 📁 File Upload
-
-Upload, download, delete files.
-
-**Backend:** Endpoints auto-enabled at `/api/uploads/`
-
-**Frontend:**
-```tsx
-import { useUploadFile, useDeleteFile, getUploadUrl } from "@/features/uploads";
-
-const { mutate: upload, isPending } = useUploadFile({
-  onSuccess: (data) => console.log('Uploaded:', data.url),
-});
-
-<input type="file" onChange={(e) => {
-  const file = e.target.files?.[0];
-  if (file) upload(file);
-}} />
-
-// Display uploaded file
-<img src={getUploadUrl(filename)} />
-```
-
-### 🔌 WebSockets (Real-time)
-
-Chat, notifications, live updates.
-
-**Backend:**
-```python
-from app.features.websockets import manager
-
-# Send to all
-await manager.broadcast({"type": "notification", "message": "Hello!"})
-
-# Send to specific client
-await manager.send_to_client("user123", {"type": "private", "message": "Hi!"})
-
-# Send to room
-await manager.send_to_room("room1", {"type": "chat", "message": "Hello room!"})
-```
-
-**Frontend:**
-```tsx
-import { useWebSocket } from "@/features/websockets";
-
-const { messages, sendMessage, isConnected, joinRoom } = useWebSocket("user123");
-
-// Send message
-sendMessage("Hello!");
-
-// Join a room
-joinRoom("chat-room-1");
-
-// Messages auto-update
-{messages.map(m => <div>{m.content}</div>)}
-```
-
-### 📄 Pagination
-
-Helper for paginated lists.
-
-```python
-from app.utils.pagination import paginate, PaginatedResponse
-
-@router.get("/items", response_model=PaginatedResponse[ItemRead])
-def list_items(skip: int = 0, limit: int = 20, db: Session = Depends(get_db)):
-    return paginate(db, select(Item), skip, limit)
-
-# Response:
-# {
-#   "items": [...],
-#   "total": 150,
-#   "page": 1,
-#   "pages": 8,
-#   "has_next": true,
-#   "has_prev": false
-# }
-```
-
-## Adding Features
-
-### 🧭 Adding Pages (Routing)
-
-The template uses React Router for navigation. Pages live in `frontend/src/pages/`.
-
-**1. Create a new page:**
-
-```tsx
-// frontend/src/pages/DashboardPage.tsx
-import { useParams } from "react-router-dom";
-
-export function DashboardPage() {
-  const { id } = useParams(); // Get URL params like /dashboard/:id
-  
-  return (
-    <div>
-      <h1>Dashboard</h1>
-      {id && <p>Viewing item: {id}</p>}
-    </div>
-  );
-}
-```
-
-**2. Add route in `App.tsx`:**
-
-```tsx
-import { DashboardPage } from "./pages/DashboardPage";
-
-// Inside <Routes>
-<Route path="/dashboard" element={<DashboardPage />} />
-<Route path="/dashboard/:id" element={<DashboardPage />} />
-```
-
-**3. Add navigation link:**
-
-```tsx
-import { Link, useNavigate } from "react-router-dom";
-
-// Declarative link
-<Link to="/dashboard">Go to Dashboard</Link>
-
-// Programmatic navigation
-const navigate = useNavigate();
-navigate("/dashboard");
-navigate("/dashboard/123");
-```
-
-**Useful hooks:**
-- `useParams()` - get URL parameters (`:id`, `:slug`)
-- `useNavigate()` - programmatic navigation
-- `useLocation()` - current URL info
-- `useSearchParams()` - query string (`?page=2`)
-
-### 1. Add a new model (backend)
-
-```python
-# backend/app/models/item.py
-import time
-from sqlmodel import Field, SQLModel
-
-class ItemBase(SQLModel):
-    name: str
-    description: str | None = None
-
-class Item(ItemBase, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    created_at: float = Field(default_factory=time.time)
-    # Add new fields with defaults - no migrations needed!
-    is_featured: bool = Field(default=False)
-
-class ItemCreate(ItemBase):
-    pass
-
-class ItemRead(ItemBase):
-    id: int
-    created_at: float
-    is_featured: bool
-```
-
-### 2. Add routes (backend)
-
-```python
-# backend/app/routes/items.py
-from fastapi import APIRouter, Depends
-from sqlmodel import Session, select
-from app.db import get_db
-from app.models.item import Item, ItemCreate, ItemRead
-
-router = APIRouter()
-
-@router.get("/items", response_model=list[ItemRead])
-def list_items(db: Session = Depends(get_db)):
-    return list(db.exec(select(Item)).all())
-
-@router.post("/items", response_model=ItemRead, status_code=201)
-def create_item(item: ItemCreate, db: Session = Depends(get_db)):
-    db_item = Item.model_validate(item)
-    db.add(db_item)
-    db.commit()
-    db.refresh(db_item)
-    return db_item
-```
-
-```python
-# backend/app/main.py - add the router
-from app.routes import items
-app.include_router(items.router, prefix="/api", tags=["Items"])
-```
-
-### 3. Regenerate frontend types
+| `bun run dev` | Start frontend only |
+| `bun run dev:api` | Start API server |
+| `bun run dev:all` | Start everything (turborepo) |
+| `bun run db:generate` | Generate Drizzle migrations |
+| `bun run db:push` | Push schema to TursoDB |
+| `bun run db:studio` | Open Drizzle Studio |
+| `bun run build` | Production build |
+| `bun run typecheck` | Type checking |
+| `bun run test` | Run Vitest |
+
+## Deployment
+
+### Vercel (Frontend)
 
 ```bash
-pnpm api
+cd apps/web
+bunx vercel --prod
 ```
 
-This generates TypeScript types + React Query hooks from your FastAPI OpenAPI schema!
-
-### 4. Use in frontend
-
-```tsx
-import { useItems, useCreateItem } from "@/api";
-
-function ItemList() {
-  const { data: items, isLoading } = useItems();
-  const createItem = useCreateItem();
-  
-  // ...
-}
-```
-
-## Database
-
-SQLite database is stored in `backend/app.db`. 
-
-### "Auto-migrations"
-
-No migration files needed! Just:
-1. Add new fields with default values
-2. Restart the server
-
-```python
-class User(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    name: str
-    # New field - old data gets default automatically
-    avatar_url: str | None = Field(default=None)
-```
-
-### Reset database
+### Fly.io (API)
 
 ```bash
-rm backend/app.db
-pnpm dev  # Tables recreated on startup
+cd apps/api
+fly launch
+fly deploy
 ```
 
-## Environment Variables
-
-Create `.env` files for configuration:
+### PartyKit (Realtime)
 
 ```bash
-# backend/.env
-DATABASE_URL=sqlite:///app.db
-DEBUG=true
-
-# frontend/.env
-VITE_API_URL=http://localhost:8000
+cd services/realtime
+npx partykit deploy
 ```
 
-## Desktop App (Electron)
+## Environment Variables Reference
 
-### Development
-
-```bash
-pnpm dev:desktop
-```
-
-### Build for distribution
-
-```bash
-pnpm electron:build
-```
-
-Output in `dist-electron/`:
-- Windows: `.exe`
-- macOS: `.dmg`
-- Linux: `.AppImage`
-
-## Adding UI Components
-
-Using shadcn/ui - copy-paste components:
-
-```bash
-cd frontend
-pnpm dlx shadcn@latest add dialog
-pnpm dlx shadcn@latest add dropdown-menu
-pnpm dlx shadcn@latest add tabs
-```
-
-## Tips for Hackathons
-
-1. **Start simple** - Get basic CRUD working first
-2. **Use defaults** - Every model field should have a default
-3. **Don't migrate** - Just delete `app.db` and restart
-4. **Auto-generate types** - Run `pnpm api` after backend changes
-5. **shadcn/ui** - Pre-built components save hours
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `TURSO_DATABASE_URL` | Yes | TursoDB connection URL |
+| `TURSO_AUTH_TOKEN` | Yes | TursoDB auth token |
+| `OSLO_SECRET` | Yes | Session encryption key |
+| `GITHUB_CLIENT_ID` | No | GitHub OAuth |
+| `GITHUB_CLIENT_SECRET` | No | GitHub OAuth |
+| `GOOGLE_CLIENT_ID` | No | Google OAuth |
+| `GOOGLE_CLIENT_SECRET` | No | Google OAuth |
+| `VITE_WS_ENDPOINT` | Yes | PartyKit WebSocket URL |
 
 ## Troubleshooting
 
-### "Backend not running"
+### "TursoDB connection failed"
+
+Make sure you've created the database and token:
 
 ```bash
-# Check if port 8000 is in use
-lsof -i :8000
-
-# Start backend manually
-cd backend && uv run uvicorn app.main:app --reload
+turso db create hyperstack-dev --location waw
+turso db tokens create hyperstack-dev
 ```
 
-### "Types out of sync"
+### "Drizzle schema mismatch"
 
 ```bash
-pnpm api
+bun run db:generate --force
+bun run db:push --force
 ```
 
-### "Module not found" (Python)
+### "PartyKit not connecting"
+
+Check that the realtime service is running:
 
 ```bash
-cd backend && uv sync
+cd services/realtime
+bun run dev
 ```
 
 ### Reset everything
 
 ```bash
-rm -rf node_modules frontend/node_modules backend/.venv backend/app.db
-pnpm install
-uv sync --project backend
-pnpm dev
+turso db destroy hyperstack-dev
+rm -rf node_modules apps/*/node_modules .turbo
+bun install
+turso db create hyperstack-dev --location waw
+bun run db:push
 ```
 
 ---
 
-Built for speed. Ship fast. 🚢
-
+Built with Bun 🥟 | TursoDB ⚡ | SolidJS 💎
