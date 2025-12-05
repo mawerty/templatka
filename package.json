@@ -15,7 +15,7 @@
     "seed": "cd backend && uv run python -m scripts.seed",
     "db:reset": "rm -f backend/app.db && pnpm seed",
     "dev:desktop": "concurrently -n be,fe,electron -c blue,green,yellow \"pnpm dev:be\" \"pnpm dev:fe\" \"pnpm electron:dev\"",
-    "electron:dev": "wait-on http://localhost:5173 && tsx electron/main.ts",
+    "electron:dev": "wait-on http://localhost:5173 && electron electron/main.cjs",
     "electron:build": "pnpm build && electron-builder"
   },
   "devDependencies": {

@@ -6,12 +6,12 @@
  * In production, it loads built static files and starts the backend.
  */
 
-import { app, BrowserWindow, shell } from "electron";
-import { spawn, type ChildProcess } from "node:child_process";
-import path from "node:path";
+const { app, BrowserWindow, shell } = require("electron");
+const { spawn } = require("node:child_process");
+const path = require("node:path");
 
-let mainWindow: BrowserWindow | null = null;
-let backendProcess: ChildProcess | null = null;
+let mainWindow = null;
+let backendProcess = null;
 
 const isDev = process.env.NODE_ENV !== "production";
 const FRONTEND_DEV_URL = "http://localhost:5173";
@@ -22,7 +22,7 @@ const BACKEND_PORT = 8000;
  * In dev mode, backend is started separately via `pnpm dev:be`.
  * In production build, we start it here.
  */
-function startBackend(): void {
+function startBackend() {
   if (isDev) {
     console.log("[Electron] Dev mode - backend should be running via pnpm dev:be");
     return;
@@ -53,7 +53,7 @@ function startBackend(): void {
 /**
  * Create the main application window.
  */
-function createWindow(): void {
+function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -92,7 +92,7 @@ function createWindow(): void {
 /**
  * Wait for backend to be ready before showing window.
  */
-async function waitForBackend(maxRetries = 30): Promise<boolean> {
+async function waitForBackend(maxRetries = 30) {
   for (let i = 0; i < maxRetries; i++) {
     try {
       const response = await fetch(`http://localhost:${BACKEND_PORT}/health`);
