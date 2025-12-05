@@ -3,12 +3,11 @@ import { ArrowRight, Zap, Database, Globe, Radio } from "lucide-react";
 import { useAuth } from "@/features/auth";
 import { Button, Card, CardContent } from "@/components/ui";
 
-export function HomePage() {
+export default function Home() {
   const { isAuthenticated } = useAuth();
 
   return (
     <div className="space-y-8">
-      {/* Hero */}
       <section className="text-center space-y-4 py-8">
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
           Hackathon Template
@@ -40,7 +39,6 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* Features */}
       <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="pt-6">
@@ -101,3 +99,4 @@ export function HomePage() {
     </div>
   );
 }
+

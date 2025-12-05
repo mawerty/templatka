@@ -1,7 +1,3 @@
-/**
- * Auth types - matching backend schemas.
- */
-
 export type AuthUser = {
   id: number;
   email: string;
@@ -27,4 +23,3 @@ export type AuthResponse = {
   access_token: string;
   token_type: string;
 };
-

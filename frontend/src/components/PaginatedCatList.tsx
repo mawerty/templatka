@@ -1,21 +1,21 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Loader2, Users, Trash2 } from "lucide-react";
+import { Cat, ChevronLeft, ChevronRight, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { apiFetch } from "@/api/fetcher";
 import { Button, Card, CardContent } from "@/components/ui";
 
-type User = {
+type CatType = {
   id: number;
   name: string;
-  email: string;
+  breed: string;
   created_at: number;
-  is_active: boolean;
+  is_cute: boolean;
   avatar_url: string | null;
 };
 
-type PaginatedUsers = {
-  items: User[];
+type PaginatedCats = {
+  items: CatType[];
   total: number;
   page: number;
   pages: number;
@@ -23,34 +23,34 @@ type PaginatedUsers = {
   has_prev: boolean;
 };
 
-async function fetchUsers(page: number): Promise<PaginatedUsers> {
-  return apiFetch<PaginatedUsers>({
-    url: `/api/users?page=${page}&per_page=5`,
+async function fetchCats(page: number): Promise<PaginatedCats> {
+  return apiFetch<PaginatedCats>({
+    url: `/api/cats?page=${page}&per_page=5`,
   });
 }
 
-async function deleteUser(id: number): Promise<void> {
+async function deleteCat(id: number): Promise<void> {
   return apiFetch<void>({
-    url: `/api/users/${id}`,
+    url: `/api/cats/${id}`,
     method: "DELETE",
   });
 }
 
-export function PaginatedUserList() {
+export function PaginatedCatList() {
   const [page, setPage] = useState(1);
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["users", page],
-    queryFn: () => fetchUsers(page),
+    queryKey: ["cats", page],
+    queryFn: () => fetchCats(page),
   });
 
-  const handleDelete = async (user: User) => {
+  const handleDelete = async (cat: CatType) => {
     try {
-      await deleteUser(user.id);
-      toast.success(`Deleted ${user.name}`);
+      await deleteCat(cat.id);
+      toast.success(`Deleted ${cat.name}`);
       refetch();
     } catch {
-      toast.error("Failed to delete user");
+      toast.error("Failed to delete cat");
     }
   };
 
@@ -59,8 +59,8 @@ export function PaginatedUserList() {
       <CardContent className="pt-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Users
+            <Cat className="h-4 w-4" />
+            Cats
           </h3>
           {data && (
             <span className="text-sm text-muted-foreground">
@@ -75,26 +75,26 @@ export function PaginatedUserList() {
           </div>
         ) : !data || data.items.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">
-            No users yet. Create one to get started!
+            No cats yet. Create one to get started!
           </p>
         ) : (
           <>
             <ul className="space-y-2 mb-4">
-              {data.items.map((user) => (
+              {data.items.map((cat) => (
                 <li
-                  key={user.id}
+                  key={cat.id}
                   className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
                 >
                   <div className="min-w-0">
-                    <p className="font-medium truncate">{user.name}</p>
+                    <p className="font-medium truncate">{cat.name}</p>
                     <p className="text-sm text-muted-foreground truncate">
-                      {user.email}
+                      {cat.breed}
                     </p>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleDelete(user)}
+                    onClick={() => handleDelete(cat)}
                     className="text-destructive hover:text-destructive"
                   >
                     <Trash2 className="h-4 w-4" />

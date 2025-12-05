@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Activity, Upload, UserPlus, UserMinus, Wifi, WifiOff } from "lucide-react";
+import { useState } from "react";
+import { Activity, Cat, Upload, UserPlus, LogIn, Wifi, WifiOff, Trash2 } from "lucide-react";
 import { useWebSocket, type WebSocketMessage } from "@/features/websockets";
 import { Card, CardContent } from "@/components/ui";
 
@@ -12,10 +12,14 @@ type ActivityItem = {
 
 function getEventIcon(event: string) {
   switch (event) {
-    case "user_created":
-      return <UserPlus className="h-4 w-4 text-green-500" />;
-    case "user_deleted":
-      return <UserMinus className="h-4 w-4 text-red-500" />;
+    case "cat_created":
+      return <Cat className="h-4 w-4 text-green-500" />;
+    case "cat_deleted":
+      return <Trash2 className="h-4 w-4 text-red-500" />;
+    case "user_registered":
+      return <UserPlus className="h-4 w-4 text-blue-500" />;
+    case "user_logged_in":
+      return <LogIn className="h-4 w-4 text-purple-500" />;
     case "file_uploaded":
       return <Upload className="h-4 w-4 text-blue-500" />;
     default:
@@ -25,14 +29,18 @@ function getEventIcon(event: string) {
 
 function getEventMessage(event: string, data: Record<string, unknown>): string {
   switch (event) {
-    case "user_created":
-      return `User "${data.name}" was created`;
-    case "user_deleted":
-      return `User "${data.name}" was deleted`;
+    case "cat_created":
+      return `Cat "${data.name}" was created`;
+    case "cat_deleted":
+      return `Cat "${data.name}" was deleted`;
+    case "user_registered":
+      return `User "${data.name}" registered`;
+    case "user_logged_in":
+      return `User "${data.name}" logged in`;
     case "file_uploaded":
       return `File "${data.filename}" was uploaded`;
     default:
-      return `Unknown event: ${event}`;
+      return `Event: ${event}`;
   }
 }
 
@@ -80,7 +88,7 @@ export function ActivityFeed() {
 
         {activities.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">
-            No activity yet. Try creating a user or uploading a file!
+            No activity yet. Try creating a cat or uploading a file!
           </p>
         ) : (
           <ul className="space-y-3">
@@ -106,4 +114,3 @@ export function ActivityFeed() {
     </Card>
   );
 }
-

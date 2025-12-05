@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { LoginForm } from "@/features/auth";
 
-export function LoginPage() {
+export default function Login() {
   const navigate = useNavigate();
 
   return (
@@ -9,9 +9,7 @@ export function LoginPage() {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Welcome back</h1>
-          <p className="text-muted-foreground mt-1">
-            Sign in to your account
-          </p>
+          <p className="text-muted-foreground mt-1">Sign in to your account</p>
         </div>
 
         <LoginForm onSuccess={() => navigate("/dashboard")} />

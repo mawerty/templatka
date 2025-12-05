@@ -1,8 +1,3 @@
-/**
- * API fetcher - bazowy fetch wrapper dla całej aplikacji.
- * Używany przez auto-generowane hooki z openapi-codegen.
- */
-
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export type FetcherOptions<TBody = unknown> = {
@@ -27,23 +22,16 @@ export async function apiFetch<TData, TBody = unknown>({
 }: FetcherOptions<TBody>): Promise<TData> {
   const response = await fetch(`${API_BASE_URL}${url}`, {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      ...headers,
-    },
+    headers: { "Content-Type": "application/json", ...headers },
     body: body ? JSON.stringify(body) : undefined,
     signal,
   });
 
   if (!response.ok) {
     const errorPayload = await response.json().catch(() => ({}));
-    throw {
-      status: response.status,
-      payload: errorPayload,
-    };
+    throw { status: response.status, payload: errorPayload };
   }
 
-  // Handle 204 No Content
   if (response.status === 204) {
     return undefined as TData;
   }
@@ -51,9 +39,6 @@ export async function apiFetch<TData, TBody = unknown>({
   return response.json();
 }
 
-/**
- * Helper do budowania query stringów
- */
 export function buildQueryString(
   params: Record<string, string | number | boolean | undefined | null>
 ): string {
@@ -66,4 +51,3 @@ export function buildQueryString(
   const queryString = searchParams.toString();
   return queryString ? `?${queryString}` : "";
 }
-

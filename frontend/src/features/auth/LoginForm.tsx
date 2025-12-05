@@ -1,10 +1,3 @@
-/**
- * Login Form component - ready to use or customize.
- *
- * Usage:
- *   <LoginForm onSuccess={() => navigate('/dashboard')} />
- */
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -35,9 +28,7 @@ export function LoginForm({ onSuccess, onRegisterClick }: LoginFormProps) {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-  });
+  } = useForm<LoginFormData>({ resolver: zodResolver(loginSchema) });
 
   const onSubmit = async (data: LoginFormData) => {
     setError(null);
@@ -63,32 +54,14 @@ export function LoginForm({ onSuccess, onRegisterClick }: LoginFormProps) {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              {...register("email")}
-              aria-invalid={!!errors.email}
-            />
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email.message}</p>
-            )}
+            <Input id="email" type="email" placeholder="you@example.com" {...register("email")} aria-invalid={!!errors.email} />
+            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              {...register("password")}
-              aria-invalid={!!errors.password}
-            />
-            {errors.password && (
-              <p className="text-sm text-destructive">
-                {errors.password.message}
-              </p>
-            )}
+            <Input id="password" type="password" placeholder="••••••••" {...register("password")} aria-invalid={!!errors.password} />
+            {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
           </div>
 
           {error && (
@@ -111,11 +84,7 @@ export function LoginForm({ onSuccess, onRegisterClick }: LoginFormProps) {
           {onRegisterClick && (
             <p className="text-center text-sm text-muted-foreground">
               Don't have an account?{" "}
-              <button
-                type="button"
-                onClick={onRegisterClick}
-                className="text-primary hover:underline"
-              >
+              <button type="button" onClick={onRegisterClick} className="text-primary hover:underline">
                 Sign up
               </button>
             </p>
@@ -125,4 +94,3 @@ export function LoginForm({ onSuccess, onRegisterClick }: LoginFormProps) {
     </Card>
   );
 }
-

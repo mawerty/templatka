@@ -1,30 +1,17 @@
-"""Application configuration using pydantic-settings."""
-
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    """Application settings loaded from environment variables."""
-
-    # Database
     database_url: str = "sqlite:///app.db"
-
-    # Server
     debug: bool = True
     api_prefix: str = "/api"
-
-    # CORS
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
-    # ===========================================
-    # FEATURE FLAGS - Enable what you need
-    # ===========================================
-
-    # Auth - JWT-based authentication
+    # Auth
     enable_auth: bool = True
-    jwt_secret: str = "change-me-in-production-use-a-long-random-string"
+    jwt_secret: str = "change-me-in-production"
     jwt_algorithm: str = "HS256"
-    jwt_expiration_hours: int = 24 * 7  # 1 week
+    jwt_expiration_hours: int = 24 * 7
 
     # File Upload
     enable_file_upload: bool = True

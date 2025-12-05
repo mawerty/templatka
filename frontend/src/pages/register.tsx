@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { RegisterForm } from "@/features/auth";
 
-export function RegisterPage() {
+export default function Register() {
   const navigate = useNavigate();
 
   return (
@@ -9,9 +9,7 @@ export function RegisterPage() {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Create account</h1>
-          <p className="text-muted-foreground mt-1">
-            Get started with your free account
-          </p>
+          <p className="text-muted-foreground mt-1">Get started with your free account</p>
         </div>
 
         <RegisterForm onSuccess={() => navigate("/dashboard")} />

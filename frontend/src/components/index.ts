@@ -1,5 +1,5 @@
-export { UserList } from "./UserList";
-export { CreateUserForm } from "./CreateUserForm";
-export { PaginatedUserList } from "./PaginatedUserList";
+export { CatList } from "./CatList";
+export { CreateCatForm } from "./CreateCatForm";
+export { PaginatedCatList } from "./PaginatedCatList";
 export { AvatarUpload } from "./AvatarUpload";
 export { ActivityFeed } from "./ActivityFeed";
