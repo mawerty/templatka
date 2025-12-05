@@ -57,3 +57,59 @@ def test_login_wrong_password(client: TestClient):
 def test_login_nonexistent_user(client: TestClient):
     response = client.post("/api/auth/login", json={"email": "nonexistent@example.com", "password": "password123"})
     assert response.status_code == 401
+
+
+def test_logout_invalidates_token(client: TestClient):
+    # Register and get token
+    response = client.post(
+        "/api/auth/register",
+        json={"email": "logout@example.com", "password": "password123", "name": "Logout Test"},
+    )
+    token = response.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Verify token works
+    response = client.get("/api/auth/me", headers=headers)
+    assert response.status_code == 200
+
+    # Logout
+    response = client.post("/api/auth/logout", headers=headers)
+    assert response.status_code == 204
+
+    # Token should now be invalid
+    response = client.get("/api/auth/me", headers=headers)
+    assert response.status_code == 401
+
+
+def test_register_password_too_short(client: TestClient):
+    response = client.post(
+        "/api/auth/register",
+        json={"email": "short@example.com", "password": "pass", "name": "Short Password"},
+    )
+    assert response.status_code == 422  # Validation error
+
+
+def test_register_password_no_digit(client: TestClient):
+    response = client.post(
+        "/api/auth/register",
+        json={"email": "nodigit@example.com", "password": "passwordonly", "name": "No Digit"},
+    )
+    assert response.status_code == 422
+    assert "digit" in response.json()["detail"][0]["msg"].lower()
+
+
+def test_register_password_no_letter(client: TestClient):
+    response = client.post(
+        "/api/auth/register",
+        json={"email": "noletter@example.com", "password": "12345678", "name": "No Letter"},
+    )
+    assert response.status_code == 422
+    assert "letter" in response.json()["detail"][0]["msg"].lower()
+
+
+def test_register_invalid_email(client: TestClient):
+    response = client.post(
+        "/api/auth/register",
+        json={"email": "not-an-email", "password": "password123", "name": "Invalid Email"},
+    )
+    assert response.status_code == 422

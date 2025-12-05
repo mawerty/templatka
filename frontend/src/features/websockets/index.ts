@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createLogger } from "@/lib/logger";
+import { getToken } from "@/features/auth/api";
 
 const logger = createLogger("WebSocket");
 
@@ -10,6 +11,7 @@ export type WebSocketMessage = {
   room?: string;
   event?: string;
   data?: unknown;
+  user_id?: number | null;
   [key: string]: unknown;
 };
 
@@ -20,10 +22,12 @@ type UseWebSocketOptions = {
   onError?: (error: Event) => void;
   reconnect?: boolean;
   reconnectDelay?: number;
+  /** Override the auth token (by default uses stored token) */
+  token?: string | null;
 };
 
 export function useWebSocket(clientId: string, options: UseWebSocketOptions = {}) {
-  const { reconnect = true, reconnectDelay = 3000 } = options;
+  const { reconnect = true, reconnectDelay = 3000, token: tokenOverride } = options;
 
   const [messages, setMessages] = useState<WebSocketMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
@@ -38,8 +42,14 @@ export function useWebSocket(clientId: string, options: UseWebSocketOptions = {}
     const connect = () => {
       if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
-      const wsUrl = `${import.meta.env.VITE_WS_URL || "ws://localhost:8000"}/ws/${clientId}`;
-      logger.info(`Connecting to ${wsUrl}`);
+      // Get auth token (use override if provided, otherwise get from storage)
+      const authToken = tokenOverride !== undefined ? tokenOverride : getToken();
+
+      // Build WebSocket URL with optional token
+      const baseUrl = `${import.meta.env.VITE_WS_URL || "ws://localhost:8000"}/ws/${clientId}`;
+      const wsUrl = authToken ? `${baseUrl}?token=${encodeURIComponent(authToken)}` : baseUrl;
+
+      logger.info(`Connecting to WebSocket (authenticated: ${!!authToken})`);
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {

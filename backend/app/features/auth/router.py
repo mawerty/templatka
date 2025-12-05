@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session, select
 
 from app.db import get_db
@@ -12,8 +13,10 @@ from app.features.auth.schemas import (
     LoginResponse,
     RegisterRequest,
 )
-from app.features.auth.utils import create_access_token, hash_password, verify_password
+from app.features.auth.utils import create_access_token, hash_password, invalidate_token, verify_password
 from app.utils.events import broadcast_event_sync
+
+security = HTTPBearer(auto_error=False)
 
 router = APIRouter()
 
@@ -56,5 +59,10 @@ def get_me(user: Annotated[AuthUser, Depends(get_current_user)]) -> AuthUser:
 
 
 @router.post("/logout", status_code=204)
-def logout() -> None:
+def logout(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
+) -> None:
+    """Logout and invalidate the current access token."""
+    if credentials:
+        invalidate_token(credentials.credentials)
     return None

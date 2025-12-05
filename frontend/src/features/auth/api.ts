@@ -35,7 +35,20 @@ export async function login(data: LoginRequest): Promise<AuthResponse> {
   return response;
 }
 
-export function logout(): void {
+export async function logout(): Promise<void> {
+  const token = getToken();
+  if (token) {
+    // Invalidate token on backend
+    try {
+      await apiFetch<void>({
+        url: "/api/auth/logout",
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch {
+      // Ignore errors - we still want to clear local token
+    }
+  }
   removeToken();
 }
 
