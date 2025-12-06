@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
+import hashlib
+import secrets
 
-import bcrypt
 import jwt
 
 from app.config import settings
@@ -8,11 +9,20 @@ from app.features.auth.blacklist import add_to_blacklist, is_blacklisted
 
 
 def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    """Hash password using PBKDF2-SHA256 (pure Python, works everywhere)."""
+    salt = secrets.token_hex(16)
+    pw_hash = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 100000)
+    return f"{salt}${pw_hash.hex()}"
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+    """Verify password against stored hash."""
+    try:
+        salt, stored_hash = hashed_password.split("$")
+        pw_hash = hashlib.pbkdf2_hmac("sha256", plain_password.encode(), salt.encode(), 100000)
+        return secrets.compare_digest(pw_hash.hex(), stored_hash)
+    except ValueError:
+        return False
 
 
 def create_access_token(user_id: int) -> str:

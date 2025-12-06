@@ -11,7 +11,7 @@ export default function Dashboard() {
     <div className="space-y-8">
       <header>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Welcome back, {user?.name || "User"}!</p>
+        <p className="text-muted-foreground mt-1">Welcome back2222, {user?.name || "User"}!</p>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-2">
